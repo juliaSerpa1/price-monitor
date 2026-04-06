@@ -21,9 +21,11 @@ const worker = new Worker(
       const browser = await puppeteer.launch({ headless: true });
       const page = await browser.newPage();
 
-      await page.goto(target.url, { waitUntil: "domcontentloaded" });
-      await page.waitForSelector(target.selector, { timeout: 10000 });
+      await page.goto(target.url, { waitUntil: "networkidle2" });
+      await page.waitForSelector(target.selector, { timeout: 20000 });
 
+      await page.screenshot({ path: "debug.png", fullPage: true });
+      
       const raw = await page.$eval(
         target.selector,
         (el) => el.innerText

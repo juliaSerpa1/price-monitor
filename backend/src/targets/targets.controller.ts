@@ -27,6 +27,10 @@ export class TargetsController {
     return this.targetsService.getHistory(id);
   }
 
+  @Get('stats')
+getStats() {
+  return this.targetsService.getStats();
+}
   // 🔥 NOVO: salvar preço vindo do worker
   @Post('price')
   savePrice(@Body() data: { targetId: string; price: number }) {

@@ -30,5 +30,5 @@ model PriceHistory {
   createdAt DateTime @default(now())
 
   targetId  String
-  target    Target   @relation(fields: [targetId], references: [id])
+  target    Target   @relation(fields: [targetId], references: [id], onDelete: Cascade)
 }

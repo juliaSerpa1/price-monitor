@@ -115,15 +115,6 @@ DELETE /targets/:id
 - Registrar preço (interno - worker)
 POST /targets/price
 
-🧪 Lógica de scraping
-Trecho principal do worker:
-
-const raw = await page.$eval(selector, el => el.innerText);
-
-const price = parseFloat(
-  raw.replace(/[^\d.,]/g, "").replace(",", ".")
-);
-
 ⚠️ Pontos de atenção
 
 -Seletores CSS
@@ -132,7 +123,6 @@ Evite classes dinâmicas
 Teste no console do navegador:
 document.querySelector("SELETOR")
 Páginas dinâmicas
-O waitForSelector usa timeout de 20s
 
 -Pode ser necessário ajustar estratégia:
 networkidle2

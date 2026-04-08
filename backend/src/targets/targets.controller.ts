@@ -1,10 +1,10 @@
 // targets.controller.ts
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Delete } from '@nestjs/common';
 import { TargetsService } from './targets.service';
 
 @Controller('targets')
 export class TargetsController {
-  constructor(private readonly targetsService: TargetsService) {}
+  constructor(private readonly targetsService: TargetsService) { }
 
   @Post()
   create(@Body() data: any) {
@@ -14,6 +14,11 @@ export class TargetsController {
   @Get()
   findAll() {
     return this.targetsService.findAll();
+  }
+
+  @Get('stats')
+  getStats() {
+    return this.targetsService.getStats();
   }
 
   // 🔥 NOVO: buscar target por id
@@ -27,13 +32,14 @@ export class TargetsController {
     return this.targetsService.getHistory(id);
   }
 
-  @Get('stats')
-getStats() {
-  return this.targetsService.getStats();
-}
   // 🔥 NOVO: salvar preço vindo do worker
   @Post('price')
   savePrice(@Body() data: { targetId: string; price: number }) {
     return this.targetsService.savePrice(data);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.targetsService.remove(id);
   }
 }

@@ -141,6 +141,7 @@ docker run -d \
   postgres:15
 
 3. Backend
+
 cd backend
 
 npm install
@@ -150,6 +151,7 @@ npx prisma migrate dev
 npm run start:dev
 
 4. Worker
+
 cd worker
 
 npm install
@@ -157,6 +159,7 @@ npm install
 node worker.js
 
 5. Frontend
+
 cd frontend
 
 npm install
@@ -164,7 +167,9 @@ npm install
 npm run dev
 
 🔌 Variáveis de ambiente
+
 DATABASE_URL="postgresql://admin:admin@localhost:5432/price_monitor"
+
 API_URL=http://localhost:3000
 
 OPENAI_API_KEY=your_key_here
@@ -172,15 +177,19 @@ OPENAI_API_KEY=your_key_here
 📡 Endpoints principais
 
 Criar alvo
+
 POST /targets
 
 Listar alvos
+
 GET /targets
 
 Remover alvo
+
 DELETE /targets/:id
 
 Registrar preço (worker)
+
 POST /targets/price
 
 🔥 NOVO — Insights IA
@@ -193,6 +202,7 @@ Retorna:
   "prediction": 21000,
   "insight": "Recomendação de compra..."
 }
+
 📊 Frontend
 
 O dashboard inclui:
@@ -201,10 +211,13 @@ O dashboard inclui:
 - Histórico de preços
 - Gráficos
 - Estatísticas
+
 🔥 Insights com IA
+
 🔥 Previsão de preço
 
 📁 Estrutura
+
 backend/
   src/
     targets/

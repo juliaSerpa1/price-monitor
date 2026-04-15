@@ -2,10 +2,63 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { scrapeQueue } from '../queue/queue';
+import { EmbeddingsService } from '../ai/embeddings/embeddings.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class TargetsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private embeddingsService: EmbeddingsService // ✅ INJETADO
+  ) { }
+
+  async savePrice(data: { targetId: string; price: number }) {
+    // 🔥 proteção contra null
+    if (data.price == null) {
+      console.log("⚠️ Preço inválido, ignorando...");
+      return null;
+    }
+
+    // 🔥 BUSCA O PRODUTO (ESSENCIAL)
+    const target = await this.prisma.target.findUnique({
+      where: { id: data.targetId },
+    });
+
+    if (!target) {
+      console.log("❌ Target não encontrado");
+      return null;
+    }
+
+    // 🔥 salva histórico
+    const saved = await this.prisma.priceHistory.create({
+      data: {
+        targetId: data.targetId,
+        price: data.price,
+      },
+    });
+
+    // 🔥 TEXTO RICO (MUDANÇA PRINCIPAL)
+    const text = `
+Produto: ${target.name}
+URL: ${target.url}
+Preço: ${data.price}
+Data: ${new Date().toISOString()}
+`;
+
+    const embedding = await this.embeddingsService.generate(text);
+
+    await this.prisma.$executeRaw`
+    INSERT INTO "Embedding" (id, "targetId", content, vector)
+    VALUES (
+      ${randomUUID()},
+      ${data.targetId},
+      ${text},
+      ${embedding}::vector
+    )
+  `;
+
+    return saved;
+  }
 
   async create(data: any) {
     const target = await this.prisma.target.create({ data });
@@ -20,7 +73,7 @@ export class TargetsService {
       'scrape',
       { targetId: target.id },
       {
-        jobId: `${target.id}-repeat`,
+        jobId: target.id, // evita duplicação
         repeat: {
           pattern: '0 0 * * *',
         },
@@ -40,13 +93,13 @@ export class TargetsService {
   }
 
   // 🔥 NOVO
-  async savePrice(data: { targetId: string; price: number }) {
-    console.log("💾 Salvando preço:", data);
+  // async savePrice(data: { targetId: string; price: number }) {
+  //   console.log("💾 Salvando preço:", data);
 
-    return this.prisma.priceHistory.create({
-      data,
-    });
-  }
+  //   return this.prisma.priceHistory.create({
+  //     data,
+  //   });
+  // }
 
   async getHistory(id: string) {
     return this.prisma.priceHistory.findMany({

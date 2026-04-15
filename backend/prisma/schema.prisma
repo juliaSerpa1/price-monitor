@@ -32,3 +32,12 @@ model PriceHistory {
   targetId  String
   target    Target   @relation(fields: [targetId], references: [id], onDelete: Cascade)
 }
+
+model Embedding {
+  id        String   @id @default(uuid())
+  targetId  String
+  vector    Unsupported("vector") // ✅ CORRETO
+  content   String?   // 🔥 ADICIONE ISSO
+
+  createdAt DateTime @default(now())
+}

@@ -1,17 +1,38 @@
 📊 PriceMonitor
 
-Sistema fullstack para monitoramento automatizado de preços a partir de páginas web utilizando URL + seletor CSS.
-A aplicação realiza scraping assíncrono com fila, armazena histórico de preços e exibe métricas e gráficos em um dashboard.
+Sistema fullstack para monitoramento automatizado de preços com IA aplicada, capaz de:
+
+- Monitorar preços via scraping
+- Armazenar histórico
+- Gerar previsões
+- Produzir insights inteligentes (RAG + LLM)
+
+🧠 Fase 2 — Inteligência Artificial (NOVO)
+
+A aplicação evolui de um scraper para uma plataforma de inteligência de mercado, adicionando:
+
+- Embeddings semânticos
+- Busca por similaridade
+- RAG (Retrieval-Augmented Generation)
+- Agente de análise automática (Orion)
+- Previsão de preços
 
 🧱 Arquitetura
-
 Frontend (Next.js)
         ↓
 Backend (NestJS API)
         ↓
 Fila (BullMQ + Redis)
         ↓
-Worker (Puppeteer)
+Worker (Puppeteer + IA fallback)
+        ↓
+Banco de Dados (PostgreSQL)
+        ↓
+Embeddings (vetores)
+        ↓
+RAG + LLM
+        ↓
+Agente Inteligente (Orion)
 
 🚀 Stack
 
@@ -21,11 +42,13 @@ TypeScript
 Prisma ORM
 BullMQ
 Redis
+OpenAI (LLM + Embeddings)
 
 - Worker
 Node.js
 Puppeteer
 BullMQ
+OpenAI (extração via IA fallback)
 
 - Frontend
 Next.js 16
@@ -34,135 +57,191 @@ TailwindCSS
 shadcn/ui
 Recharts
 
+- Banco
+PostgreSQL
+(Opcional) pgvector
+
 ⚙️ Como funciona
 
--Usuário cadastra um alvo (nome, URL, selector)
--Backend persiste o alvo
--Um job é enviado para a fila (scrape)
--Worker consome o job
--Puppeteer acessa a página e extrai o valor
--O preço é enviado de volta para a API
--Backend salva o histórico
--Frontend exibe os dados atualizados
+🔹 Fluxo base (Scraping)
+- Usuário cadastra um alvo (nome, URL, selector)
+- Backend salva no banco
+- Job enviado para fila
+- Worker processa:
+- API → JSON → DOM → IA fallback
+- Preço retornado para API
+- Histórico salvo
+
+🔹 Fluxo IA (NOVO)
+A cada preço coletado:
+- Backend gera um embedding semântico
+- Salva no banco com:
+- Nome do produto
+- ID
+- Preço
+- Quando o usuário pede análise:
+- RAG busca dados similares
+- LLM gera insight contextual
+
+Agente combina:
+-histórico
+-previsão
+-contexto semântico
+
+🧠 Componentes de IA
+📌 Embeddings
+
+Transformam dados em vetores para busca inteligente.
+
+Exemplo salvo:
+
+{
+  "name": "MacBook Pro 16",
+  "id": "uuid",
+  "price": 21788
+}
+
+📌 RAG (Retrieval-Augmented Generation)
+
+Busca informações relevantes antes de perguntar para o LLM.
+
+SELECT * FROM "Embedding"
+ORDER BY vector <-> query_vector
+LIMIT 5
+
+📌 Agente Orion
+
+Responsável por gerar insights:
+
+- Analisa histórico de preços
+- Calcula previsão
+- Consulta RAG
+- Retorna recomendação
+
+📌 Forecast (Previsão)
+
+Modelo simples que prevê tendência de preço com base no histórico.
 
 📦 Setup do projeto
-
--Pré-requisitos
+Pré-requisitos
 Node.js 20
 Docker
 Redis
 
-1. Redis (Docker)
+1. Redis
 docker run -d -p 6379:6379 redis
 
-2. Backend
-- cd backend
+2. PostgreSQL (Docker recomendado)
+docker run -d \
+  --name postgres \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=admin \
+  -e POSTGRES_DB=price_monitor \
+  -p 5432:5432 \
+  postgres:15
 
-- npm install
-- npm run start:dev
+3. Backend
+cd backend
 
-API disponível em:
-- http://localhost:3000
+npm install
 
-3. Worker
-- cd worker
+npx prisma migrate dev
 
-- npm install
-- node worker.js
+npm run start:dev
 
-4. Frontend
-- cd frontend
+4. Worker
+cd worker
 
-- npm install
-- npm run dev
+npm install
 
-Acesse:
-- http://localhost:3001
+node worker.js
 
-🔌 Configuração
+5. Frontend
+cd frontend
 
-CORS (NestJS)
-app.enableCors({
-  origin: 'http://localhost:3001',
-  credentials: true,
-});
+npm install
 
--- Variáveis de ambiente
+npm run dev
 
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
+🔌 Variáveis de ambiente
+DATABASE_URL="postgresql://admin:admin@localhost:5432/price_monitor"
 API_URL=http://localhost:3000
 
-DATABASE_URL="postgresql://admin:admin@localhost:5432/price_monitor"
+OPENAI_API_KEY=your_key_here
 
 📡 Endpoints principais
 
-- Criar alvo
+Criar alvo
 POST /targets
-{
-  "name": "Produto",
-  "url": "https://site.com",
-  "selector": ".price"
-}
 
-- Listar alvos
+Listar alvos
 GET /targets
 
-- Remover alvo
+Remover alvo
 DELETE /targets/:id
 
-- Registrar preço (interno - worker)
+Registrar preço (worker)
 POST /targets/price
 
-⚠️ Pontos de atenção
+🔥 NOVO — Insights IA
 
--Seletores CSS
-Devem ser específicos e estáveis
-Evite classes dinâmicas
-Teste no console do navegador:
-document.querySelector("SELETOR")
-Páginas dinâmicas
+GET /targets/:id/insights
 
--Pode ser necessário ajustar estratégia:
-networkidle2
-delays adicionais
-Parsing de preço
-Diferentes formatos (R$, . e ,)
-Pode exigir tratamento específico por site
+Retorna:
 
+{
+  "prediction": 21000,
+  "insight": "Recomendação de compra..."
+}
 📊 Frontend
 
 O dashboard inclui:
-- Cadastro de alvos
-- Listagem com status
-- Exclusão de itens
-- Estatísticas gerais
-- Gráfico de histórico de preços
 
-📁 Estrutura sugerida
+- Cadastro de produtos
+- Histórico de preços
+- Gráficos
+- Estatísticas
+🔥 Insights com IA
+🔥 Previsão de preço
 
+📁 Estrutura
 backend/
   src/
     targets/
+    ai/
+      embeddings/
+      rag/
+      agents/
+      llm/
+    analytics/
     queue/
     prisma/
 
 worker/
   worker.js
+  ai-extractor.js
 
 frontend/
   app/
   components/
   types/
-  
-🔮 Melhorias possíveis
-- Agendamento por intervalo (cron)
-- Alertas (email, webhook)
-- Autenticação
-- Retry/backoff na fila
-- Normalização de preços por domínio
-- Detecção automática de selector
+
+⚠️ Pontos de atenção
+
+- Scraping
+Sites variam muito
+Sempre usar fallback (API → JSON → DOM → IA)
+
+- IA
+Embeddings devem conter:
+nome
+id
+preço
+
+Banco
+Pode usar:
+JSON (simples)
+pgvector (performance)
 
 📄 Licença
 
@@ -170,7 +249,8 @@ MIT
 
 👨‍💻 Observações
 
-Projeto estruturado com foco em:
-Separação de responsabilidades (API / Worker)
-Escalabilidade via fila
-Facilidade de extensão
+Projeto evoluído para:
+
+✅ Arquitetura escalável
+✅ IA aplicada (RAG + Agente)
+✅ Separação clara de responsabilidades

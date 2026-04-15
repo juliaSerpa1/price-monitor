@@ -1,5 +1,6 @@
 const { Worker } = require("bullmq");
 const puppeteer = require("puppeteer");
+const { extractPriceAI } = require("./ai-extractor");
 
 console.log("🚀 Worker iniciado...");
 
@@ -96,7 +97,7 @@ const worker = new Worker(
               console.log("🔥 Preço via API:", apiPrice);
             }
           }
-        } catch {}
+        } catch { }
       });
 
       await page.goto(target.url, {
@@ -190,7 +191,7 @@ const worker = new Worker(
       await job.updateProgress(90);
 
       // =========================
-      // 🔥 DECISÃO FINAL
+      // 🔥 DECISÃO FINAL (DECLARAR ANTES)
       // =========================
       let finalPrice = null;
 
@@ -198,15 +199,26 @@ const worker = new Worker(
       else if (jsonPrice) finalPrice = jsonPrice;
       else if (domRaw) finalPrice = parsePrice(domRaw);
 
+      // =========================
+      // 🔥 FALLBACK IA
+      // =========================
+      let aiPrice = null;
+
       if (!finalPrice) {
-        console.log("❌ Nenhum preço encontrado");
+        console.log("🤖 Tentando via IA...");
 
-        await page.screenshot({
-          path: "erro.png",
-          fullPage: true,
-        });
+        const html = await page.content();
 
-        return;
+        const ai = await extractPriceAI(html);
+
+        if (ai?.price) {
+          aiPrice = ai.price;
+        }
+      }
+
+      // decisão final com IA
+      if (!finalPrice && aiPrice) {
+        finalPrice = aiPrice;
       }
 
       console.log("💵 Preço final:", finalPrice);

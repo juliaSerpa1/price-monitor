@@ -11,8 +11,9 @@
   "description": "",
   "dependencies": {
     "bullmq": "^5.71.1",
-    "dotenv": "^17.3.1",
+    "dotenv": "^17.4.2",
     "ioredis": "^5.10.1",
+    "openai": "^6.34.0",
     "puppeteer": "^24.40.0",
     "puppeteer-cluster": "^0.25.0"
   }
